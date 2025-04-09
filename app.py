@@ -43,7 +43,7 @@ with open("model/tokenizer.json", "r") as f:
 
 # Load the model
 model = tf.keras.models.load_model(
-    "model/sentiment_with_attention.keras",
+    "model/sentiment_model.keras",
     custom_objects={"AttentionLayer": AttentionLayer},
     compile=False
 )
