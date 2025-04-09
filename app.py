@@ -12,7 +12,7 @@ with open("model/tokenizer.json") as f:
     tokenizer = tokenizer_from_json(f.read())
 
 # Load model
-model = tf.keras.models.load_model("model/sentiment_with_attention.keras", compile=False)
+model = tf.keras.models.load_model("model/sentiment_model.keras", compile=False)
 
 # Clean input
 def clean_text(text):
