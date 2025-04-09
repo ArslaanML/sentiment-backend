@@ -34,11 +34,11 @@ class AttentionLayer(Layer):
         return context_vector
 
 # Load tokenizer
-with open("tokenizer.json", "r") as f:
+with open("model/tokenizer.json", "r") as f:
     tokenizer = tokenizer_from_json(f.read())
 
 # Load model
-model = tf.keras.models.load_model("sentiment_with_attention.keras", custom_objects={"AttentionLayer": AttentionLayer}, compile=False)
+model = tf.keras.models.load_model("model/sentiment_with_attention.keras", custom_objects={"AttentionLayer": AttentionLayer}, compile=False)
 
 def clean_text(text):
     text = re.sub(r"http\S+", "", text)
