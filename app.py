@@ -37,6 +37,11 @@ class AttentionLayer(Layer):
         context_vector = tf.reduce_sum(context_vector, axis=1)
         return context_vector
 
+    def get_config(self):
+        config = super(AttentionLayer, self).get_config()
+        return config
+
+
 # Load tokenizer from JSON
 with open("model/tokenizer.json", "r") as f:
     tokenizer = tokenizer_from_json(f.read())
