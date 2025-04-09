@@ -64,10 +64,17 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
-    if "text" not in data:
-        return jsonify({"error": "No text provided"}), 400
-    sentiment, confidence = predict_sentiment(data["text"])
-    return jsonify({"sentiment": sentiment, "confidence": f"{confidence}%"})
+    if not data or "text" not in data:
+        return jsonify({"error": "Missing 'text' field"}), 400
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    text = clean_text(data["text"])
+    seq = tokenizer.texts_to_sequences([text])
+    padded = pad_sequences(seq, maxlen=100, padding='post')
+    prediction = float(model.predict(padded)[0][0])
+    sentiment = "Positive" if prediction > 0.5 else "Negative"
+
+    return jsonify({
+        "sentiment": sentiment,
+        "confidence": round(prediction * 100, 2)  # percentage
+    })
+
