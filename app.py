@@ -46,7 +46,7 @@ class AttentionLayer(Layer):
 
 # Flask app
 app = Flask(__name__)
-CORS(app)  # ✅ Enable CORS for all routes
+CORS(app, origins=["https://arslaanml.github.io"])  # ✅ Enable CORS for all routes
 
 # Load tokenizer
 with open("model/tokenizer.json", "r") as f:
