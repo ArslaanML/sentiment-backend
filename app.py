@@ -8,6 +8,9 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.utils import register_keras_serializable
+import sqlite3
+from datetime import datetime
+from flask_cors import CORS  # ✅ Add this
 
 # Register the custom attention layer
 @register_keras_serializable()
@@ -41,8 +44,11 @@ class AttentionLayer(Layer):
         config = super(AttentionLayer, self).get_config()
         return config
 
+# Flask app
+app = Flask(__name__)
+CORS(app)  # ✅ Enable CORS for all routes
 
-# Load tokenizer from JSON
+# Load tokenizer
 with open("model/tokenizer.json", "r") as f:
     tokenizer = tokenizer_from_json(f.read())
 
@@ -53,17 +59,32 @@ model = tf.keras.models.load_model(
     compile=False
 )
 
-# Flask app
-app = Flask(__name__)
+# Initialize DB table at startup
+def init_db():
+    conn = sqlite3.connect("predictions.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS predictions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT,
+            sentiment TEXT,
+            confidence REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# Text cleaning
+init_db()
+
+# Clean text
 def clean_text(text):
     text = re.sub(r"http\S+", "", text)
     text = re.sub(r"@\w+", "", text)
     text = re.sub(r"[^A-Za-z\s]", "", text)
     return text.lower().strip()
 
-# Prediction function
+# Predict
 def predict_sentiment(text):
     cleaned = clean_text(text)
     sequence = tokenizer.texts_to_sequences([cleaned])
@@ -73,12 +94,22 @@ def predict_sentiment(text):
     confidence = round(float(prediction) * 100, 2)
     return sentiment, confidence
 
-# Root route
+# Log prediction
+def log_prediction(text, sentiment, confidence):
+    conn = sqlite3.connect("predictions.db")
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO predictions (text, sentiment, confidence)
+        VALUES (?, ?, ?)
+    ''', (text, sentiment, confidence))
+    conn.commit()
+    conn.close()
+
+# Routes
 @app.route("/")
 def home():
     return "Sentiment API is running!"
 
-# API route
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
@@ -87,6 +118,7 @@ def predict():
 
     text = data["text"]
     sentiment, confidence = predict_sentiment(text)
+    log_prediction(text, sentiment, confidence)
 
     return jsonify({
         "text": text,
@@ -97,4 +129,3 @@ def predict():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
